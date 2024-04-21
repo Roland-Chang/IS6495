@@ -1,82 +1,127 @@
 import sqlite3
-import functions as func
-import db_base as db
-import xml.etree.ElementTree as ET
 
 
-class Tracks(db.DBbase):
+class Database:
+    def __init__(self, db_name):
+        self.conn = sqlite3.connect(db_name)
+        self.cur = self.conn.cursor()
+        self.create_tables()
 
-    def __init__(self):
-        super().__init__("tracksdb.sqlite")
+    def create_tables(self):
+        self.cur.execute("""CREATE TABLE IF NOT EXISTS EMPLOYEE (
+                            EMP_ID INTEGER PRIMARY KEY,
+                            Last TEXT,
+                            First TEXT,
+                            Position TEXT
+                            )""")
+        self.cur.execute('''CREATE TABLE IF NOT EXISTS PROPERTY (
+                            PROPERTY_ID INTEGER PRIMARY KEY,
+                            Address TEXT,
+                            Manager TEXT
+                            )''')
+        self.cur.execute('''CREATE TABLE IF NOT EXISTS UNIT (
+                            UNIT_ID INTEGER PRIMARY KEY,
+                            UNIT_NUMBER TEXT,
+                            Bed INTEGER,
+                            Bath INTEGER,
+                            Price REAL
+                            )''')
+        self.cur.execute('''CREATE TABLE IF NOT EXISTS MAINTENANCE (
+                            ID INTEGER PRIMARY KEY,
+                            UNIT_ID INTEGER,
+                            EMP_ID INTEGER,
+                            Date TEXT,
+                            Issue TEXT,
+                            Status TEXT,
+                            FOREIGN KEY (UNIT_ID) REFERENCES UNIT(UNIT_ID),
+                            FOREIGN KEY (EMP_ID) REFERENCES EMPLOYEE(EMP_ID)
+                            )''')
+        self.cur.execute('''CREATE TABLE IF NOT EXISTS LEASE (
+                            LEASE_ID INTEGER PRIMARY KEY,
+                            RENTER_ID INTEGER,
+                            EMP_ID INTEGER,
+                            UNIT_ID INTEGER,
+                            Price REAL,
+                            Period TEXT,
+                            FOREIGN KEY (RENTER_ID) REFERENCES RENTER(RENTER_ID),
+                            FOREIGN KEY (EMP_ID) REFERENCES EMPLOYEE(EMP_ID),
+                            FOREIGN KEY (UNIT_ID) REFERENCES UNIT(UNIT_ID)
+                            )''')
+        self.cur.execute('''CREATE TABLE IF NOT EXISTS RENTER (
+                            RENTER_ID INTEGER PRIMARY KEY,
+                            Last TEXT,
+                            First TEXT
+                            )''')
+        self.cur.execute('''CREATE TABLE IF NOT EXISTS PAYMENT (
+                            PAYMENT_ID INTEGER PRIMARY KEY,
+                            LEASE_ID INTEGER,
+                            RENTER_ID INTEGER,
+                            EMP_ID INTEGER,
+                            Period TEXT,
+                            Date TEXT,
+                            Amount REAL,
+                            FOREIGN KEY (LEASE_ID) REFERENCES LEASE(LEASE_ID),
+                            FOREIGN KEY (RENTER_ID) REFERENCES RENTER(RENTER_ID),
+                            FOREIGN KEY (EMP_ID) REFERENCES EMPLOYEE(EMP_ID)
+                            )''')
+        self.conn.commit()
 
-    def reset_database(self):
-        sql = """
-            DROP TABLE IF EXISTS Artist;
-            DROP TABLE IF EXISTS Album;
-            DROP TABLE IF EXISTS Track;
+    def add_employee(self, last, first, position):
+        self.cur.execute("INSERT INTO EMPLOYEE (Last, First, Position) VALUES (?, ?, ?)", (last, first, position))
+        self.conn.commit()
+        print("Employee added successfully.")
 
-            CREATE TABLE Artist (
-                id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-                name    TEXT UNIQUE
-            );
+    def get_employee(self, emp_id):
+        self.cur.execute("SELECT * FROM EMPLOYEE WHERE EMP_ID=?", (emp_id,))
+        return self.cur.fetchone()
 
-            CREATE TABLE Album (
-                id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-                artist_id  INTEGER,
-                title   TEXT UNIQUE
-            );
+    def update_employee_position(self, emp_id, new_position):
+        self.cur.execute("UPDATE EMPLOYEE SET Position=? WHERE EMP_ID=?", (new_position, emp_id))
+        self.conn.commit()
+        print("Employee position updated successfully.")
 
-            CREATE TABLE Track (
-                id  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-                title TEXT  UNIQUE,
-                album_id  INTEGER,
-                len INTEGER, rating INTEGER, count INTEGER
-            ); """
+    def delete_employee(self, emp_id):
+        self.cur.execute("DELETE FROM EMPLOYEE WHERE EMP_ID=?", (emp_id,))
+        self.conn.commit()
+        print("Employee deleted successfully.")
 
-        super().execute_script(sql)
+    def close_connection(self):
+        self.conn.close()
 
-    def load_database(self, fname):
-        stuff = ET.parse(fname)
-        all_items = stuff.findall("dict/dict/dict")
-        print("Dict count:", len(all_items))
 
-        for entry in all_items:
-            if func.lookup(entry, "Name") is None: continue
+# Add a new employee
+def add_new_employee(db, last, first, position):
+    db.add_employee(last, first, position)
 
-            name = func.lookup(entry, "Name")
-            artist = func.lookup(entry, "Artist")
-            album = func.lookup(entry, "Album")
-            count = func.lookup(entry, "Play Count")
-            rating = func.lookup(entry, "Rating")
-            length = func.lookup(entry, "Total Time")
 
-            if name is None or artist is None or album is None:
-                continue
+# Lookup a current employee
+def lookup_employee(db, emp_id):
+    employee = db.get_employee(emp_id)
+    print("Retrieved employee:", employee)
 
-            print(name, artist, album, count, rating, length)
 
-            cur = super().get_cursor
+# Update an employee's position
+def update_employee(db, emp_id, new_position):
+    db.update_employee_position(emp_id, new_position)
 
-            cur.execute('''INSERT OR IGNORE INTO Artist (name)
-                VALUES ( ? )''', (artist,))
 
-            cur.execute('SELECT id FROM Artist WHERE name = ? ', (artist,))
-            artist_id = cur.fetchone()[0]
+# Delete an employee
+def delete_employee(db, emp_id):
+    db.delete_employee(emp_id)
 
-            cur.execute('''INSERT OR IGNORE INTO Album (title, artist_id)
-                VALUES ( ?, ? )''', (album, artist_id))
 
-            cur.execute('SELECT id FROM Album WHERE title = ? ', (album,))
-            album_id = cur.fetchone()[0]
+if __name__ == "__main__":
+    db = Database('cowboypm.sqlite')
 
-            cur.execute('''INSERT OR REPLACE INTO Track
-                (title, album_id, len, rating, count)
-                VALUES ( ?, ?, ?, ?, ? )''',
-                        (name, album_id, length, rating, count))
-
-            super().get_connection.commit()
-
-tracks = Tracks()
-tracks.load_database("Library.xml")
-tracks.close_db()
-print("Completed")
+    # #Add a new employee
+    # db.add_employee('Doe', 'John', 'Manager')
+    #
+    # # Lookup a current employee
+    # employee = db.get_employee(1)
+    # print("Retrieved employee:", employee)
+    #
+    # # Update an employee's position
+    # db.update_employee_position(1, 'Supervisor')
+    #
+    # # Delete an employee
+    # db.delete_employee(1)
