@@ -125,3 +125,48 @@ if __name__ == "__main__":
     #
     # # Delete an employee
     # db.delete_employee(1)
+
+
+def main():
+    db = Database('cowboypm.sqlite')
+    user_management = UserManagement()
+
+    print("\n=== Welcome to the Cowboy Property Management System ===")
+    print("Select a login mode:")
+    print("1. Admin")
+    print("2. Employee")
+    print("3. Renter")
+    choice = input("Enter your choice (1-3): ")
+
+    if choice == '1':
+        role = 'admin'
+    elif choice == '2':
+        role = 'employee'
+    elif choice == '3':
+        role = 'renter'
+    else:
+        print("Invalid choice. Exiting.")
+        return
+
+    print(f"=== {role.capitalize()} Login ===")
+    username = input("Enter username: ")
+    password = input("Enter password: ")
+
+    authenticated_role = user_management.authenticate(username, password)
+    if authenticated_role == role:
+        print(f"Welcome, {username}! You are logged in as a {role}.")
+        if role == 'admin':
+            admin_menu(db)
+        elif role == 'employee':
+            employee_menu(db)
+        elif role == 'renter':
+            renter_menu(db)
+        else:
+            print("Invalid user role.")
+    else:
+        print("Invalid username or password. Please try again.")
+
+    db.close_connection()
+
+if __name__ == "__main__":
+    main()
