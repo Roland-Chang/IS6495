@@ -127,46 +127,57 @@ if __name__ == "__main__":
     # db.delete_employee(1)
 
 
-def main():
-    db = Database('cowboypm.sqlite')
-    user_management = UserManagement()
+class Renter:
+   RENTER_ID = None
+   name_last = None
+   name_first = None
 
-    print("\n=== Welcome to the Cowboy Property Management System ===")
-    print("Select a login mode:")
-    print("1. Admin")
-    print("2. Employee")
-    print("3. Renter")
-    choice = input("Enter your choice (1-3): ")
 
-    if choice == '1':
-        role = 'admin'
-    elif choice == '2':
-        role = 'employee'
-    elif choice == '3':
-        role = 'renter'
-    else:
-        print("Invalid choice. Exiting.")
-        return
+   def __init__(self, RENTER_ID, Last, First):
+       self.RENTER_ID = RENTER_ID
+       self.name_last = Last
+       self.name_first = First
 
-    print(f"=== {role.capitalize()} Login ===")
-    username = input("Enter username: ")
-    password = input("Enter password: ")
 
-    authenticated_role = user_management.authenticate(username, password)
-    if authenticated_role == role:
-        print(f"Welcome, {username}! You are logged in as a {role}.")
-        if role == 'admin':
-            admin_menu(db)
-        elif role == 'employee':
-            employee_menu(db)
-        elif role == 'renter':
-            renter_menu(db)
-        else:
-            print("Invalid user role.")
-    else:
-        print("Invalid username or password. Please try again.")
+   def lookup_renter_info(self):
+       print("Renter name: " +self.name_first+ " " +self.name_last)
+       print("Renter ID: " +self.RENTER_ID)
 
-    db.close_connection()
 
-if __name__ == "__main__":
-    main()
+
+
+class Employee:
+
+
+   name_first = None
+   name_last = None
+   EMP_ID = None
+   position = None
+
+
+   def __init__(self, name_first, name_last, EMP_ID, position):
+       self.name_first = name_first
+       self.name_last = name_last
+       self.EMP_ID = EMP_ID
+       self.position = position
+
+
+   def lookup_emp_info(self):
+       print("Employee name: " +self.name_first+ " " +self.name_last)
+       print("Employee ID: " +self.EMP_ID)
+       print("Employee position: " +self.position)
+
+
+
+
+emp_1 = Employee("John", "Doe", "1", "Admin")
+emp_2 = Employee("Fred", "Holly", "2", "Employee")
+
+
+
+
+# print(emp_1.name_first)
+# print(emp_1.name_last)
+# print(emp_1.EMP_ID)
+# print(emp_1.position)
+emp_1.lookup_emp_info()
